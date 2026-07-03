@@ -1,0 +1,49 @@
+{
+    "elements": [
+        {
+            "type": "Label",
+            "caption": "1. Withings API Zugangsdaten"
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "ClientID",
+            "caption": "Client ID"
+        },
+        {
+            "type": "PasswordTextBox",
+            "name": "ClientSecret",
+            "caption": "Client Secret"
+        },
+        {
+            "type": "Label",
+            "caption": "WICHTIG: Die Callback-URL in deinem Withings Developer Account MUSS exakt so lauten:"
+        },
+        {
+            "type": "Label",
+            "caption": "https://<DEINE-CONNECT-ID>.ipmagic.de/hook/smartwithings"
+        },
+        {
+            "type": "Label",
+            "caption": "2. Einstellungen"
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "FetchInterval",
+            "caption": "Abruf-Intervall (in Minuten, 0 = deaktiviert)",
+            "minimum": 0,
+            "maximum": 1440
+        }
+    ],
+    "actions": [
+        {
+            "type": "Button",
+            "label": "Mit Withings verbinden (OAuth Login)",
+            "onClick": "echo SWA_GetAuthURL($id);"
+        },
+        {
+            "type": "Button",
+            "label": "Daten jetzt manuell abrufen",
+            "onClick": "SWA_FetchMeasurements($id);"
+        }
+    ]
+}
