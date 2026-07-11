@@ -1,11 +1,11 @@
 {
     "id": "{A34C4F00-11DE-4B2E-9F4D-934C7A3959FE}",
-    "name": "SmartWithings",
+    "name": "WithingsDevice",
     "type": 3,
     "vendor": "",
     "aliases": [],
     "parentRequirements": [],
     "childRequirements": [],
     "implemented": [],
-    "prefix": "SWA"
+    "prefix": "WITHINGS"
 }

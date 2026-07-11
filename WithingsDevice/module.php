@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-class SmartWithings extends IPSModule {
+class WithingsDevice extends IPSModule {
 
     public function Create() {
         parent::Create();
@@ -11,20 +11,28 @@ class SmartWithings extends IPSModule {
         $this->RegisterPropertyInteger("FetchInterval", 15);
         $this->RegisterPropertyInteger("LastUpdate", 0);
 
+        // AI Properties
+        $this->RegisterPropertyBoolean("EnableAI", false);
+        $this->RegisterPropertyString("GeminiApiKey", "");
+        $this->RegisterPropertyString("GeminiModel", "gemini-1.5-flash");
+        $this->RegisterPropertyInteger("ArchiveDays", 28);
+        $this->RegisterPropertyInteger("SMTPInstanceID", 0);
+
         // Versteckte Attribute für OAuth Tokens
         $this->RegisterAttributeString("AccessToken", "");
         $this->RegisterAttributeString("RefreshToken", "");
         $this->RegisterAttributeInteger("TokenExpires", 0);
 
-        $this->RegisterTimer("FetchTimer", 0, 'SWA_FetchMeasurements($_IPS[\'TARGET\']);');
+        $this->RegisterTimer("FetchTimer", 0, 'WITHINGS_FetchMeasurements($_IPS[\'TARGET\']);');
 
         $this->MaintainVariable("LastMeasurement", "⏱️ Letzte Messung", 3, "", 0, true);
+        $this->MaintainVariable("DailyReport", "🧠 Gemini Analyse", 3, "", 1, true);
     }
 
     public function ApplyChanges() {
         parent::ApplyChanges();
         
-        $this->RegisterHook("/hook/smartwithings");
+        $this->RegisterHook("/hook/withings");
 
         $interval = $this->ReadPropertyInteger("FetchInterval");
         $this->SetTimerInterval("FetchTimer", $interval * 60 * 1000);
@@ -67,11 +75,11 @@ class SmartWithings extends IPSModule {
         if (count($cc_ids) > 0) {
             $url = CC_GetConnectURL($cc_ids[0]);
             if ($url != "") {
-                return $url . "/hook/smartwithings";
+                return $url . "/hook/withings";
             }
         }
         // Fallback to local IP if Connect is not active
-        return "http://" . $_SERVER['HTTP_HOST'] . "/hook/smartwithings";
+        return "http://" . $_SERVER['HTTP_HOST'] . "/hook/withings";
     }
 
     public function GetAuthURL() {
@@ -163,7 +171,7 @@ class SmartWithings extends IPSModule {
 
     protected function Log(string $text): void
     {
-        IPS_LogMessage('SmartVillaKunterbunt', 'SmartWithings: ' . $text);
+        IPS_LogMessage('SmartVillaKunterbunt', 'WithingsDevice: ' . $text);
     }
 
     public function FetchMeasurements() {
@@ -265,6 +273,9 @@ class SmartWithings extends IPSModule {
 
         if ($newMeasurements > 0) {
             $this->Log("Abruf erfolgreich. $newMeasurements neue Messwerte verarbeitet.");
+            if ($this->ReadPropertyBoolean("EnableAI")) {
+                $this->EvaluateWithGemini();
+            }
         }
         $this->SendDebug("Fetch", "Abruf erfolgreich beendet (" . $pages . " Seiten).", 0);
     }
@@ -388,6 +399,118 @@ class SmartWithings extends IPSModule {
 
         if (@IPS_GetObjectIDByIdent($ident, $this->InstanceID) !== false) {
             $this->SetValue($ident, $value);
+        }
+    }
+
+    public function EvaluateWithGemini() {
+        $apiKey = trim($this->ReadPropertyString("GeminiApiKey"));
+        if ($apiKey === "") {
+            $this->Log("Gemini API Key fehlt. KI Auswertung abgebrochen.");
+            return;
+        }
+
+        $archiveIDs = IPS_GetInstanceListByModuleID("{43192F0B-135B-4CE7-A0A7-1475603F3060}");
+        if (count($archiveIDs) == 0) {
+            $this->Log("Kein Archive Control gefunden.");
+            return;
+        }
+        $archiveID = $archiveIDs[0];
+
+        $days = $this->ReadPropertyInteger("ArchiveDays");
+        $startTime = time() - ($days * 24 * 60 * 60);
+        
+        $metrics = [
+            1 => "Gewicht (kg)",
+            6 => "Körperfett (%)",
+            11 => "Herzfrequenz (bpm)",
+            9 => "Blutdruck diastolisch (mmHg)",
+            10 => "Blutdruck systolisch (mmHg)",
+            76 => "Muskelmasse (kg)",
+            77 => "Wasseranteil (kg)"
+        ];
+
+        $prompt = "Du bist ein motivierender KI-Gesundheits-Coach. Hier sind meine aufgezeichneten Gesundheitsdaten der letzten " . $days . " Tage.\n";
+        $prompt .= "Bitte bewerte den Trend der Messwerte, gib mir ein kurzes Feedback und weise auf Besonderheiten hin (z.B. stark steigender Blutdruck oder Gewichtsverlust).\n";
+        $prompt .= "Fasse dich kurz, bleibe positiv und präzise. Antworte in Deutsch und formatiere den Text in einfachem Markdown.\n\n";
+
+        $hasData = false;
+        foreach ($metrics as $type => $label) {
+            $ident = "Measure_" . $type;
+            $varID = @IPS_GetObjectIDByIdent($ident, $this->InstanceID);
+            if ($varID !== false && AC_GetLoggingStatus($archiveID, $varID)) {
+                $values = AC_GetLoggedValues($archiveID, $varID, $startTime, time(), 0);
+                if (count($values) > 0) {
+                    $prompt .= "### $label\n";
+                    $aggregates = AC_GetAggregatedValues($archiveID, $varID, 1, $startTime, time(), 0);
+                    $aggregates = array_reverse($aggregates);
+                    foreach ($aggregates as $agg) {
+                        if ($agg['Duration'] > 0) {
+                            $dateStr = date("d.m.", $agg['TimeStamp']);
+                            $valStr = number_format($agg['Avg'], 1);
+                            $prompt .= "- $dateStr: $valStr\n";
+                            $hasData = true;
+                        }
+                    }
+                    $prompt .= "\n";
+                }
+            }
+        }
+
+        if (!$hasData) {
+            $this->Log("Keine Archivdaten für Gemini Auswertung gefunden.");
+            return;
+        }
+
+        $model = $this->ReadPropertyString("GeminiModel");
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/" . $model . ":generateContent?key=" . $apiKey;
+        
+        $payload = [
+            'contents' => [
+                [
+                    'role' => 'user',
+                    'parts' => [
+                        ['text' => $prompt]
+                    ]
+                ]
+            ],
+            'generationConfig' => [
+                'temperature' => 0.4
+            ]
+        ];
+
+        $jsonPayload = json_encode($payload);
+        
+        $script = '<?php
+            $ch = curl_init("' . $url . '");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, ' . var_export($jsonPayload, true) . ');
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ["Content-Type: application/json"]);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            $result = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            WITHINGS_ProcessGeminiResponse(' . $this->InstanceID . ', $result, $httpCode);
+        ';
+        IPS_RunScriptText($script);
+    }
+
+    public function ProcessGeminiResponse(string $result, int $httpCode) {
+        if ($httpCode === 200 && $result) {
+            $data = json_decode($result, true);
+            if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                $report = $data['candidates'][0]['content']['parts'][0]['text'];
+                $this->SetValue("DailyReport", $report);
+                $this->Log("Gemini Bericht erfolgreich generiert.");
+                
+                $smtpID = $this->ReadPropertyInteger("SMTPInstanceID");
+                if ($smtpID > 0 && IPS_InstanceExists($smtpID)) {
+                    @SMTP_SendMail($smtpID, "Dein Gesundheits-Coach Update", $report);
+                }
+            }
+        } else {
+            $this->Log("Fehler bei Gemini API (HTTP $httpCode): " . substr($result, 0, 200));
         }
     }
 }

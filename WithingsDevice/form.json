@@ -32,18 +32,53 @@
             "caption": "Abruf-Intervall (in Minuten, 0 = deaktiviert)",
             "minimum": 0,
             "maximum": 1440
+        },
+        {
+            "type": "Label",
+            "caption": "3. KI Auswertung (Google Gemini)"
+        },
+        {
+            "type": "CheckBox",
+            "name": "EnableAI",
+            "caption": "Gemini Auswertung nach jedem Abruf aktivieren"
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "GeminiApiKey",
+            "caption": "Gemini API Key"
+        },
+        {
+            "type": "Select",
+            "name": "GeminiModel",
+            "caption": "Gemini Modell",
+            "options": [
+                { "label": "Gemini 1.5 Flash (Schnell & Günstig)", "value": "gemini-1.5-flash" },
+                { "label": "Gemini 1.5 Pro (Besser & Teurer)", "value": "gemini-1.5-pro" }
+            ]
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "ArchiveDays",
+            "caption": "Trend-Zeitraum (Tage, 28 = 4 Wochen)",
+            "minimum": 1,
+            "maximum": 365
+        },
+        {
+            "type": "SelectInstance",
+            "name": "SMTPInstanceID",
+            "caption": "SMTP Instanz für täglichen Bericht per Mail"
         }
     ],
     "actions": [
         {
             "type": "Button",
             "label": "Mit Withings verbinden (OAuth Login)",
-            "onClick": "echo SWA_GetAuthURL($id);"
+            "onClick": "echo WITHINGS_GetAuthURL($id);"
         },
         {
             "type": "Button",
             "label": "Daten jetzt manuell abrufen",
-            "onClick": "SWA_FetchMeasurements($id);"
+            "onClick": "WITHINGS_FetchMeasurements($id);"
         }
     ]
 }
