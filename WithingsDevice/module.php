@@ -535,9 +535,14 @@ class WithingsDevice extends IPSModuleStrict {
             "caption": "1. Withings API Zugangsdaten"
         },
         {
-            "type": "ValidationTextBox",
-            "name": "ClientID",
-            "caption": "Client ID"
+            "type": "RowLayout",
+            "items": [
+                {
+                    "type": "ValidationTextBox",
+                    "name": "ClientID",
+                    "caption": "Client ID"
+                }
+            ]
         },
         {
             "type": "PasswordTextBox",
