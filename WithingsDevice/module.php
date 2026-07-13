@@ -524,6 +524,104 @@ class WithingsDevice extends IPSModuleStrict {
         IPS_LogMessage('SmartVillaKunterbunt', 'WithingsDevice: ' . $Message);
         return true;
     }
+
+    public function GetConfigurationForm(): string
+    {
+        return <<<'EOT'
+{
+    "elements": [
+        {
+            "type": "Label",
+            "caption": "1. Withings API Zugangsdaten"
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "ClientID",
+            "caption": "Client ID"
+        },
+        {
+            "type": "PasswordTextBox",
+            "name": "ClientSecret",
+            "caption": "Client Secret"
+        },
+        {
+            "type": "Label",
+            "caption": "WICHTIG: Die Callback-URL in deinem Withings Developer Account MUSS exakt so lauten:"
+        },
+        {
+            "type": "Label",
+            "caption": "https://<DEINE-CONNECT-ID>.ipmagic.de/hook/smartwithings"
+        },
+        {
+            "type": "Label",
+            "caption": "2. Einstellungen"
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "FetchInterval",
+            "caption": "Abruf-Intervall (in Minuten, 0 = deaktiviert)",
+            "minimum": 0,
+            "maximum": 1440
+        },
+        {
+            "type": "Label",
+            "caption": "3. KI Auswertung (Google Gemini)"
+        },
+        {
+            "type": "CheckBox",
+            "name": "EnableAI",
+            "caption": "Gemini Auswertung nach jedem Abruf aktivieren"
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "GeminiApiKey",
+            "caption": "Gemini API Key"
+        },
+        {
+            "type": "Select",
+            "name": "GeminiModel",
+            "caption": "Gemini Modell",
+            "options": [
+                {
+                    "label": "Gemini 3.5 Flash (Empfohlen)",
+                    "value": "gemini-3.5-flash"
+                }
+            ]
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "ArchiveDays",
+            "caption": "Trend-Zeitraum (Tage, 28 = 4 Wochen)",
+            "minimum": 1,
+            "maximum": 365
+        },
+        {
+            "type": "SelectInstance",
+            "name": "SMTPInstanceID",
+            "caption": "SMTP Instanz für täglichen Bericht per Mail"
+        }
+    ],
+    "actions": [
+        {
+            "type": "Button",
+            "label": "Mit Withings verbinden (OAuth Login)",
+            "onClick": "echo WITHINGS_GetAuthURL($id);"
+        },
+        {
+            "type": "Button",
+            "label": "Daten jetzt manuell abrufen",
+            "onClick": "WITHINGS_FetchMeasurements($id);"
+        },
+        {
+            "type": "Button",
+            "label": "KI Auswertung (inkl. Mail) jetzt testen",
+            "onClick": "WITHINGS_EvaluateWithGemini($id);"
+        }
+    ]
 }
+EOT;
+    }
+}
+
 
 ?>
