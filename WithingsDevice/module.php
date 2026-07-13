@@ -342,10 +342,8 @@ class WithingsDevice extends IPSModule {
                 
                 IPS_SetName($childID, $config['name']);
                 
-                if (function_exists('IPS_SetVariableCustomPresentation')) {
-                    if ($config['suffix'] != "") {
-                        IPS_SetVariableCustomPresentation($childID, ['SUFFIX' => $config['suffix']]);
-                    }
+                if ($config['suffix'] != "") {
+                    IPS_SetVariableCustomPresentation($childID, ['SUFFIX' => $config['suffix']]);
                 }
                 
                 if ($config['icon'] != "") {
@@ -383,10 +381,8 @@ class WithingsDevice extends IPSModule {
                     @IPS_ApplyChanges($archiveIds[0]);
                 }
                 
-                if (function_exists('IPS_SetVariableCustomPresentation')) {
-                    if ($config['suffix'] != "") {
-                        IPS_SetVariableCustomPresentation($varID, ['SUFFIX' => $config['suffix']]);
-                    }
+                if ($config['suffix'] != "") {
+                    IPS_SetVariableCustomPresentation($varID, ['SUFFIX' => $config['suffix']]);
                 }
                 
                 if ($config['icon'] != "") {
