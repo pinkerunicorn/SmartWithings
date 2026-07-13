@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-class WithingsDevice extends IPSModule {
+class WithingsDevice extends IPSModuleStrict {
 
-    public function Create() {
+    public function Create(): void{
         parent::Create();
         
         $this->RegisterPropertyString("ClientID", "");
@@ -29,7 +29,7 @@ class WithingsDevice extends IPSModule {
         $this->MaintainVariable("DailyReport", "🧠 Gemini Analyse", 3, "", 1, true);
     }
 
-    public function ApplyChanges() {
+    public function ApplyChanges(): void{
         parent::ApplyChanges();
         
         $this->RegisterHook("/hook/withings");
@@ -45,7 +45,7 @@ class WithingsDevice extends IPSModule {
         $this->UpdatePresentations();
     }
 
-    private function RegisterHook($WebHook) {
+    protected function RegisterHook(string $HookPath): bool {
         $ids = IPS_GetInstanceListByModuleID("{015A6EB8-D6E5-4B93-B496-0D3F77AE9FE1}");
         if (count($ids) > 0) {
             $hooks = json_decode(IPS_GetProperty($ids[0], "Hooks"), true);
@@ -54,20 +54,21 @@ class WithingsDevice extends IPSModule {
             }
             $found = false;
             foreach ($hooks as $index => $hook) {
-                if ($hook['Hook'] == $WebHook) {
+                if ($hook['Hook'] == $HookPath) {
                     if ($hook['TargetID'] == $this->InstanceID) {
-                        return;
+                        return true;
                     }
                     $hooks[$index]['TargetID'] = $this->InstanceID;
                     $found = true;
                 }
             }
             if (!$found) {
-                $hooks[] = ['Hook' => $WebHook, 'TargetID' => $this->InstanceID];
+                $hooks[] = ['Hook' => $HookPath, 'TargetID' => $this->InstanceID];
             }
             IPS_SetProperty($ids[0], "Hooks", json_encode($hooks));
             IPS_ApplyChanges($ids[0]);
         }
+        return true;
     }
 
     private function GetRedirectURI() {
@@ -98,7 +99,7 @@ class WithingsDevice extends IPSModule {
         echo "Bitte öffne diesen Link im Browser, um Symcon mit Withings zu verbinden:\n\n" . $url;
     }
 
-    protected function ProcessHookData() {
+    protected function ProcessHookData(): string {
         $this->SendDebug("WebHook", "Daten empfangen: " . print_r($_GET, true), 0);
 
         if (isset($_GET['code'])) {
@@ -119,9 +120,9 @@ class WithingsDevice extends IPSModule {
             ];
 
             $this->RequestTokens($postData);
-            echo "Erfolgreich autorisiert! Du kannst dieses Fenster nun schließen und in Symcon auf 'Daten jetzt manuell abrufen' klicken.";
+            return "Erfolgreich autorisiert! Du kannst dieses Fenster nun schließen und in Symcon auf 'Daten jetzt manuell abrufen' klicken.";
         } else {
-            echo "Kein Code empfangen.";
+            return "Kein Code empfangen.";
         }
     }
 
@@ -510,9 +511,10 @@ class WithingsDevice extends IPSModule {
         }
     }
 
-    protected function LogMessage($Message, $Type)
+    protected function LogMessage(string $Message, int $Type): bool
     {
         IPS_LogMessage('SmartVillaKunterbunt', 'WithingsDevice: ' . $Message);
+        return true;
     }
 }
 
