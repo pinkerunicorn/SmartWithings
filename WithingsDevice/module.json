@@ -7,5 +7,7 @@
     "parentRequirements": [],
     "childRequirements": [],
     "implemented": [],
-    "prefix": "WITHINGS"
+    "prefix": "WITHINGS",
+    "author": "Florian Graßinger",
+    "url": "https://github.com/pinkerunicorn/"
 }
