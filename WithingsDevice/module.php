@@ -295,27 +295,29 @@ class WithingsDevice extends IPSModuleStrict {
         $icon = "";
 
         switch ($type) {
-            case 1: $name = "⚖ Gewicht"; $suffix = "kg"; $icon = "Scale"; break;
-            case 4: $name = "📏 Größe"; $suffix = "m"; $icon = "Distance"; break;
-            case 5: $name = "💪 Fettfreie Masse"; $suffix = "kg"; $icon = "Scale"; break;
-            case 6: $name = "🥓 Körperfett"; $suffix = "%"; $icon = "Drop"; break;
-            case 8: $name = "🧈 Fettmasse"; $suffix = "kg"; $icon = "Scale"; break;
-            case 9: $name = "❤ Blutdruck (Diastolisch)"; $suffix = "mmHg"; $icon = "Heart"; break;
-            case 10: $name = "❤ Blutdruck (Systolisch)"; $suffix = "mmHg"; $icon = "Heart"; break;
-            case 11: $name = "💓 Herzfrequenz"; $suffix = "bpm"; $icon = "Heart"; break;
+            case 1: $name = "Gewicht"; $suffix = "kg"; $icon = "Scale"; break;
+            case 4: $name = "Größe"; $suffix = "m"; $icon = "Distance"; break;
+            case 5: $name = "Fettfreie Masse"; $suffix = "kg"; $icon = "Scale"; break;
+            case 6: $name = "Körperfett"; $suffix = "%"; $icon = "Drop"; break;
+            case 8: $name = "Fettmasse"; $suffix = "kg"; $icon = "Scale"; break;
+            case 9: $name = "Blutdruck (Diastolisch)"; $suffix = "mmHg"; $icon = "Heart"; break;
+            case 10: $name = "Blutdruck (Systolisch)"; $suffix = "mmHg"; $icon = "Heart"; break;
+            case 11: $name = "Herzfrequenz"; $suffix = "bpm"; $icon = "Heart"; break;
             case 12: 
-            case 54: $name = "🩸 SPO2 (Sauerstoffsättigung)"; $suffix = "%"; $icon = "Heart"; break;
+            case 54: $name = "SPO2 (Sauerstoffsättigung)"; $suffix = "%"; $icon = "Heart"; break;
             case 71: 
-            case 73: $name = "🌡 Temperatur"; $suffix = "°C"; $icon = "Temperature"; break;
-            case 76: $name = "🦾 Muskelmasse"; $suffix = "kg"; $icon = "Scale"; break;
+            case 73: $name = "Temperatur"; $suffix = "°C"; $icon = "Temperature"; break;
+            case 76: $name = "Muskelmasse"; $suffix = "kg"; $icon = "Scale"; break;
             case 77: $name = "Wasseranteil"; $suffix = "kg"; $icon = "Drop"; break;
-            case 88: $name = "🦴 Knochenmasse"; $suffix = "kg"; $icon = "Scale"; break;
-            case 91: $name = "🫀 Pulswellengeschwindigkeit"; $suffix = "m/s"; $icon = "Wind"; break;
-            case 123: $name = "🫁 VO2 Max"; $suffix = "ml/min/kg"; $icon = "Heart"; break;
-            case 130: $name = "🥓 Viszeralfett"; $suffix = "%"; $icon = "Drop"; break;
+            case 88: $name = "Knochenmasse"; $suffix = "kg"; $icon = "Scale"; break;
+            case 91: $name = "Pulswellengeschwindigkeit"; $suffix = "m/s"; $icon = "Wind"; break;
+            case 123: $name = "VO2 Max"; $suffix = "ml/min/kg"; $icon = "Heart"; break;
+            case 130: $name = "Viszeralfett"; $suffix = "%"; $icon = "Drop"; break;
             case 135: 
             case 155: $name = "Gefäßalter"; $suffix = "Jahre"; $icon = "Clock"; break;
             case 136: $name = "Nervenaktivität"; $suffix = "Punkte"; $icon = "Intensity"; break;
+            case 138: $name = "QT-Intervall"; $suffix = "ms"; $icon = "Heart"; break;
+            case 139: $name = "Vorhofflimmern"; $suffix = ""; $icon = "Heart"; break;
             case 168: $name = "Extrazelluläres Wasser"; $suffix = "kg"; $icon = "Drop"; break;
             case 169: $name = "Intrazelluläres Wasser"; $suffix = "kg"; $icon = "Drop"; break;
             // Body Scan segmented data
@@ -353,7 +355,7 @@ class WithingsDevice extends IPSModuleStrict {
                 
                 if ($config['suffix'] != "") {
                     IPS_SetVariableCustomPresentation($childID, [
-                'PRESENTATION'=> VARIABLE_PRESENTATION_VALUE_PRESENTATION,'SUFFIX'=> $config['suffix']]);
+                'PRESENTATION'=> VARIABLE_PRESENTATION_VALUE_PRESENTATION,'SUFFIX'=> ' ' . $config['suffix']]);
                 }
                 
                 if ($config['icon'] != "") {
@@ -393,7 +395,7 @@ class WithingsDevice extends IPSModuleStrict {
                 
                 if ($config['suffix'] != "") {
                     IPS_SetVariableCustomPresentation($varID, [
-                'PRESENTATION'=> VARIABLE_PRESENTATION_VALUE_PRESENTATION,'SUFFIX'=> $config['suffix']]);
+                'PRESENTATION'=> VARIABLE_PRESENTATION_VALUE_PRESENTATION,'SUFFIX'=> ' ' . $config['suffix']]);
                 }
                 
                 if ($config['icon'] != "") {
