@@ -32,6 +32,9 @@ class WithingsDevice extends IPSModuleStrict {
     public function ApplyChanges(): void{
         parent::ApplyChanges();
         // --- Auto-generated References ---
+        foreach ($this->GetReferenceList() as $refID) {
+            $this->UnregisterReference($refID);
+        }
         $ref_SMTPInstanceID = $this->ReadPropertyInteger('SMTPInstanceID');
         if ($ref_SMTPInstanceID > 1 && @IPS_ObjectExists($ref_SMTPInstanceID)) {
             $this->RegisterReference($ref_SMTPInstanceID);
@@ -281,7 +284,7 @@ class WithingsDevice extends IPSModuleStrict {
         }
 
         if ($newMeasurements > 0) {
-            $this->Log("Abruf erfolgreich. $newMeasurements neue Messwerte verarbeitet.");
+            // $this->Log("Abruf erfolgreich. $newMeasurements neue Messwerte verarbeitet.");
             if ($this->ReadPropertyBoolean("EnableAI")) {
                 $this->EvaluateWithGemini();
             }
