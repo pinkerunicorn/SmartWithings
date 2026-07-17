@@ -40,7 +40,7 @@ class WithingsDevice extends IPSModuleStrict {
 
 
         
-        $this->RegisterHook("/hook/withings");
+        $this->RegisterHook("/hook/smartwithings");
 
         $interval = $this->ReadPropertyInteger("FetchInterval");
         $this->SetTimerInterval("FetchTimer", $interval * 60 * 1000);
@@ -84,11 +84,11 @@ class WithingsDevice extends IPSModuleStrict {
         if (count($cc_ids) > 0) {
             $url = CC_GetConnectURL($cc_ids[0]);
             if ($url != "") {
-                return $url . "/hook/withings";
+                return $url . "/hook/smartwithings";
             }
         }
         // Fallback to local IP if Connect is not active
-        return "http://". $_SERVER['HTTP_HOST'] . "/hook/withings";
+        return "http://". $_SERVER['HTTP_HOST'] . "/hook/smartwithings";
     }
 
     public function GetAuthURL() {
