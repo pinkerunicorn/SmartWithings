@@ -542,6 +542,10 @@ class WithingsDevice extends IPSModuleStrict {
             "caption": "1. Withings API Zugangsdaten"
         },
         {
+            "type": "Label",
+            "caption": "Hier trägst du die Client ID und das Client Secret aus deinem Withings Developer Account ein. Diese Daten brauchst du, damit sich Symcon mit deinem Withings Account verbinden kann."
+        },
+        {
             "type": "RowLayout",
             "items": [
                 {
@@ -569,6 +573,10 @@ class WithingsDevice extends IPSModuleStrict {
             "caption": "2. Einstellungen"
         },
         {
+            "type": "Label",
+            "caption": "Gib hier an, wie oft deine Daten von Withings abgerufen werden sollen. Wenn du 0 einträgst, wird der automatische Abruf deaktiviert."
+        },
+        {
             "type": "NumberSpinner",
             "name": "FetchInterval",
             "caption": "Abruf-Intervall (in Minuten, 0 = deaktiviert)",
@@ -578,6 +586,10 @@ class WithingsDevice extends IPSModuleStrict {
         {
             "type": "Label",
             "caption": "3. KI Auswertung (Google Gemini)"
+        },
+        {
+            "type": "Label",
+            "caption": "Hier kannst du deinen persönlichen KI-Coach aktivieren. Du brauchst dafür einen API Key von Google. Gib außerdem an, über welchen Zeitraum die Trends berechnet werden sollen und wohin dir der Bericht geschickt werden darf."
         },
         {
             "type": "CheckBox",
