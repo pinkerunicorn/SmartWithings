@@ -11,10 +11,7 @@ class WithingsDevice extends IPSModuleStrict {
         $this->RegisterPropertyInteger("FetchInterval", 15);
         $this->RegisterPropertyInteger("LastUpdate", 0);
 
-        // AI Properties
-        $this->RegisterPropertyBoolean("EnableAI", false);
-        $this->RegisterPropertyString("GeminiApiKey", "");
-        $this->RegisterPropertyString("GeminiModel", "gemini-3.5-flash");
+        // Gemini API-Key und Modell werden zentral über SmartGeminiIO konfiguriert.
         $this->RegisterPropertyInteger("ArchiveDays", 28);
         $this->RegisterPropertyInteger("SMTPInstanceID", 0);
 
@@ -415,11 +412,13 @@ class WithingsDevice extends IPSModuleStrict {
     }
 
     public function EvaluateWithGemini() {
-        $apiKey = trim($this->ReadPropertyString("GeminiApiKey"));
-        if ($apiKey === "") {
-            $this->Log("Gemini API Key fehlt. KI Auswertung abgebrochen.");
+        // SmartGeminiIO auto-discover
+        $geminiInstances = IPS_GetInstanceListByModuleID('{4C8B2A6D-9E3F-4A7B-8C5D-1F6E2A3B7C4D}');
+        if (empty($geminiInstances)) {
+            $this->Log('SmartGeminiIO Instanz nicht gefunden! Bitte eine erstellen.');
             return;
         }
+        $geminiId = $geminiInstances[0];
 
         $archiveIDs = IPS_GetInstanceListByModuleID("{43192F0B-135B-4CE7-A0A7-1475603F3060}");
         if (count($archiveIDs) == 0) {
@@ -473,56 +472,33 @@ class WithingsDevice extends IPSModuleStrict {
             return;
         }
 
-        $model = $this->ReadPropertyString("GeminiModel");
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/". $model . ":generateContent?key=". $apiKey;
-        
-        $payload = [
-            'contents'=> [
-                [
-                    'role'=> 'user',
-                    'parts'=> [
-                        ['text'=> $prompt]
-                    ]
-                ]
-            ],
-            'generationConfig'=> [
-                'temperature'=> 0.4
-            ]
-        ];
+        $instanceId = $this->InstanceID;
 
-        $jsonPayload = json_encode($payload);
-        
+        // Async — kein Schema = freier Markdown-Text, Temperatur 0.4
         $script = '<?php
-            $ch = curl_init("'. $url . '");
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, '. var_export($jsonPayload, true) . ');
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ["Content-Type: application/json"]);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-            $result = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            
-            WITHINGS_ProcessGeminiResponse('. $this->InstanceID . ', $result, $httpCode);
+            $result = GIO_Query(' . $geminiId . ',
+                ' . var_export($prompt, true) . ',
+                \'Du bist ein motivierender KI-Gesundheits-Coach. Antworte auf Deutsch im Markdown-Format.\',
+                \'\',
+                0.4
+            );
+            WITHINGS_ProcessGeminiResult(' . $instanceId . ', $result);
         ';
         IPS_RunScriptText($script);
     }
 
-    public function ProcessGeminiResponse(string $result, int $httpCode) {
-        if ($httpCode === 200 && $result) {
-            $data = json_decode($result, true);
-            if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-                $report = $data['candidates'][0]['content']['parts'][0]['text'];
-                $this->SetValue("DailyReport", $report);
-                $this->Log("Gemini Bericht erfolgreich generiert.");
-                
-                $smtpID = $this->ReadPropertyInteger("SMTPInstanceID");
-                if ($smtpID > 0 && IPS_InstanceExists($smtpID)) {
-                    @SMTP_SendMail($smtpID, "Dein Gesundheits-Coach Update", $report);
-                }
-            }
-        } else {
-            $this->Log("Fehler bei Gemini API (HTTP $httpCode): ". substr($result, 0, 200));
+    public function ProcessGeminiResult(string $report) {
+        if (empty($report)) {
+            $this->Log('SmartGeminiIO lieferte keine Antwort.');
+            return;
+        }
+
+        $this->SetValue('DailyReport', $report);
+        $this->Log('Gemini Gesundheitsbericht erfolgreich generiert.');
+
+        $smtpID = $this->ReadPropertyInteger('SMTPInstanceID');
+        if ($smtpID > 0 && IPS_InstanceExists($smtpID)) {
+            @SMTP_SendMail($smtpID, 'Dein Gesundheits-Coach Update', $report);
         }
     }
 
@@ -597,20 +573,8 @@ class WithingsDevice extends IPSModuleStrict {
             "caption": "Gemini Auswertung nach jedem Abruf aktivieren"
         },
         {
-            "type": "ValidationTextBox",
-            "name": "GeminiApiKey",
-            "caption": "Gemini API Key"
-        },
-        {
-            "type": "Select",
-            "name": "GeminiModel",
-            "caption": "Gemini Modell",
-            "options": [
-                {
-                    "label": "Gemini 3.5 Flash (Empfohlen)",
-                    "value": "gemini-3.5-flash"
-                }
-            ]
+            "type": "Label",
+            "caption": "API-Key und Modell werden zentral über die 'Smart Gemini IO' Instanz konfiguriert.\nBitte dort einmalig deinen Google Gemini API-Key hinterlegen."
         },
         {
             "type": "NumberSpinner",
