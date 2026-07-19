@@ -14,6 +14,7 @@ class WithingsDevice extends IPSModuleStrict {
         // Gemini API-Key und Modell werden zentral über SmartGeminiIO konfiguriert.
         $this->RegisterPropertyInteger("ArchiveDays", 28);
         $this->RegisterPropertyInteger("SMTPInstanceID", 0);
+        $this->RegisterPropertyBoolean("EnableAI", false);
 
         // Versteckte Attribute für OAuth Tokens
         $this->RegisterAttributeString("AccessToken", "");
