@@ -181,13 +181,13 @@ class WithingsDevice extends IPSModuleStrict {
 
     protected function Log(string $text): void
     {
-        IPS_LogMessage('SmartVillaKunterbunt', 'WithingsDevice: '. $text);
+        $this->SLog('INFO', $text);
     }
 
     public function FetchMeasurements() {
         $accessToken = $this->ReadAttributeString("AccessToken");
         if ($accessToken == "") {
-            $this->Log("Kein Access Token vorhanden. Bitte autorisieren.");
+            $this->SLog('ERROR', 'Kein Access Token vorhanden. Bitte autorisieren.');
             $this->SendDebug("Fetch", "Kein Access Token vorhanden.", 0);
             return;
         }
@@ -195,7 +195,7 @@ class WithingsDevice extends IPSModuleStrict {
         if (time() > $this->ReadAttributeInteger("TokenExpires")) {
             $this->SendDebug("Fetch", "Token abgelaufen, versuche Refresh...", 0);
             if (!$this->RefreshToken()) {
-                $this->Log("Token-Refresh fehlgeschlagen!");
+                $this->SLog('ERROR', 'Token-Refresh fehlgeschlagen!');
                 return;
             }
             $accessToken = $this->ReadAttributeString("AccessToken");
@@ -262,7 +262,7 @@ class WithingsDevice extends IPSModuleStrict {
                 }
 
             } else {
-                $this->Log("Fehler beim Abruf der Messwerte.");
+                $this->SLog('ERROR', 'Fehler beim Abruf der Messwerte.');
                 $this->SendDebug("Fetch", "Fehler beim Abruf: ". $response, 0);
                 $offset = 0; // stop on error
             }
@@ -416,14 +416,14 @@ class WithingsDevice extends IPSModuleStrict {
         // SmartGeminiIO auto-discover
         $geminiInstances = IPS_GetInstanceListByModuleID('{4C8B2A6D-9E3F-4A7B-8C5D-1F6E2A3B7C4D}');
         if (empty($geminiInstances)) {
-            $this->Log('SmartGeminiIO Instanz nicht gefunden! Bitte eine erstellen.');
+            $this->SLog('ERROR', 'SmartGeminiIO Instanz nicht gefunden! Bitte eine erstellen.');
             return;
         }
         $geminiId = $geminiInstances[0];
 
         $archiveIDs = IPS_GetInstanceListByModuleID("{43192F0B-135B-4CE7-A0A7-1475603F3060}");
         if (count($archiveIDs) == 0) {
-            $this->Log("Kein Archive Control gefunden.");
+            $this->SLog('ERROR', 'Kein Archive Control gefunden.');
             return;
         }
         $archiveID = $archiveIDs[0];
@@ -469,7 +469,7 @@ class WithingsDevice extends IPSModuleStrict {
         }
 
         if (!$hasData) {
-            $this->Log("Keine Archivdaten für Gemini Auswertung gefunden.");
+            $this->SLog('WARNING', 'Keine Archivdaten für Gemini Auswertung gefunden.');
             return;
         }
 
@@ -490,12 +490,12 @@ class WithingsDevice extends IPSModuleStrict {
 
     public function ProcessGeminiResult(string $report) {
         if (empty($report)) {
-            $this->Log('SmartGeminiIO lieferte keine Antwort.');
+            $this->SLog('ERROR', 'SmartGeminiIO lieferte keine Antwort.');
             return;
         }
 
         $this->SetValue('DailyReport', $report);
-        $this->Log('Gemini Gesundheitsbericht erfolgreich generiert.');
+        $this->SLog('INFO', 'Gemini Gesundheitsbericht erfolgreich generiert.');
 
         $smtpID = $this->ReadPropertyInteger('SMTPInstanceID');
         if ($smtpID > 0 && IPS_InstanceExists($smtpID)) {
@@ -503,8 +503,20 @@ class WithingsDevice extends IPSModuleStrict {
         }
     }
 
+    private function SLog(string $level, string $message, string $details = ''): void
+    {
+        $source = static::class;
+        $slogInstances = @IPS_GetInstanceListByModuleID('{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}');
+        if (is_array($slogInstances) && count($slogInstances) > 0) {
+            @SLOG_Log($slogInstances[0], $level, $source, $message, $details);
+        } else {
+            IPS_LogMessage('SmartVillaKunterbunt', $source . ': ' . $message);
+        }
+    }
+
     protected function LogMessage(string $Message, int $Type): bool
     {
+        $this->SLog('INFO', $Message);
         IPS_LogMessage('SmartVillaKunterbunt', 'WithingsDevice: '. $Message);
         return true;
     }
